@@ -9,12 +9,12 @@ namespace RailDriverDV
     public static class Main
     {
         [CanBeNull] private static RailDriver _railDriver;
-        [CanBeNull] private static GameObject _rootObject;
 
         [UsedImplicitly]
         public static bool Load(UnityModManager.ModEntry entry)
         {
             entry.OnToggle = OnToggle;
+            entry.OnFixedUpdate = OnUpdate;
             return true;
         }
 
@@ -33,29 +33,24 @@ namespace RailDriverDV
                 Debug.Log(newRailDriver.ProductString());
 
                 _railDriver = newRailDriver;
-
-                if (_rootObject != null) return true;
-                
-                _rootObject = new GameObject();
-                Object.DontDestroyOnLoad(_rootObject);
-                _rootObject.AddComponent<LocoControl>();
-                var locoControl = _rootObject.GetComponent<LocoControl>();
-                locoControl.RailDriver = _railDriver;
-                locoControl.Start();
             }
             else
             {
-                if (_rootObject != null)
-                {
-                    var locoControl = _rootObject.GetComponent<LocoControl>();
-                    locoControl.Stop();
-                    Object.Destroy(_rootObject);
-                }
-                
                 _railDriver?.Dispose();
                 _railDriver = null;
             }
             return true;
+        }
+
+        private static void OnUpdate(UnityModManager.ModEntry entry, float delta)
+        {
+            var lastLoco= PlayerManager.LastLoco;
+
+            if (lastLoco == null || _railDriver == null) return;
+
+            var state = _railDriver.GetState();
+            
+            
         }
     }
 }
