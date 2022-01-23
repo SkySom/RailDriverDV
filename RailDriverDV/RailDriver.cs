@@ -62,41 +62,57 @@ namespace RailDriverDV
 
     public class RailDriverState
     {
-        public readonly ButtonState Bell = new ButtonState(13, 0x02);
-        public readonly ButtonState Power = new ButtonState(8, 0x01);
+        public readonly ButtonState Sand = new ButtonState("Sand", 12, 0x80);
+        public readonly ButtonState Bell = new ButtonState("Bell", 13, 0x02);
+
+        private readonly IList<ButtonState> _buttonStates;
 
         private byte[] _lastData;
 
+        public RailDriverState()
+        {
+            _buttonStates = new List<ButtonState>(new[]
+            {
+                Sand,
+                Bell
+            });
+        }
+
         public void UpdateFrom(byte[] data)
         {
-            Bell.UpdateFrom(data);
-            Power.UpdateFrom(data);
+            foreach (var buttonState in _buttonStates)
+            {
+                buttonState.UpdateFrom(data);
+            }
+
             _lastData = data;
         }
 
         public override string ToString()
         {
-            return "Bell: " + Bell +
-                   "\n Power: " + Power +
-                   "\n lastData: " + RailDriver.FormatBytes(_lastData);
+            return "{\n" + 
+                   string.Join(",\n", _buttonStates.Select(each => "  " + each.GetName() + ":" + each).ToArray()) +
+                   "\n}";
         }
 
         public bool IsChanged()
         {
-            return Bell.IsChanged() || Power.IsChanged();
+            return _buttonStates.Select(buttonState => buttonState.IsChanged()).Any();
         }
     }
 
     public class ButtonState
     {
+        private readonly string _name;
         private readonly int _index;
         private readonly byte _mask;
 
         private bool _current;
         private bool _prev;
 
-        public ButtonState(int index, byte mask)
+        public ButtonState(string name, int index, byte mask)
         {
+            _name = name;
             _index = index;
             _mask = mask;
         }
@@ -117,9 +133,14 @@ namespace RailDriverDV
             return _current;
         }
 
+        public string GetName()
+        {
+            return _name;
+        }
+
         public override string ToString()
         {
-            return "_current: " + _current;
+            return "{Name: " + _name + ", Current: " + _current + "}";
         }
     }
 }

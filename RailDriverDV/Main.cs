@@ -69,20 +69,15 @@ namespace RailDriverDV
                 Debug.Log(state.ToString());
             }
 
+            if (state.Sand.IsChanged() && state.Sand.IsButtonDown())
+            {
+                locoControl.UpdateSand(locoControl.IsSandOn() ? ToggleDirection.DOWN : ToggleDirection.UP);
+            }
+
             if (state.Bell.IsChanged())
             {
                 locoControl.UpdateHorn(state.Bell.IsButtonDown() ? 1.0F : 0.0F);
             }
-
-            if (state.Power.IsChanged())
-            {
-                if (state.Power.IsButtonDown())
-                {
-                    locoWrapper.SetRunning(true);
-                }
-            }
-            
-            
         }
     }
 }
