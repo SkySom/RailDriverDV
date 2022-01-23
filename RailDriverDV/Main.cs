@@ -49,7 +49,12 @@ namespace RailDriverDV
             if (lastLoco == null || _railDriver == null) return;
 
             var state = _railDriver.GetState();
+            var locoControl = lastLoco.GetComponent<LocoControllerBase>();
             
+            if (state.Bell.IsChanged())
+            {
+                locoControl.UpdateHorn(state.Bell.IsButtonDown() ? 1.0F : 0.0F);
+            }
             
         }
     }
