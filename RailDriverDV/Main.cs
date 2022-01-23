@@ -29,7 +29,7 @@ namespace RailDriverDV
                     entry.Logger.Error("Failed to Setup RailDriver");
                     return false;
                 }
-                
+
                 Debug.Log(newRailDriver.ProductString());
 
                 _railDriver = newRailDriver;
@@ -39,22 +39,49 @@ namespace RailDriverDV
                 _railDriver?.Dispose();
                 _railDriver = null;
             }
+
             return true;
         }
 
         private static void OnUpdate(UnityModManager.ModEntry entry, float delta)
         {
-            var lastLoco= PlayerManager.LastLoco;
+            var lastLoco = PlayerManager.LastLoco;
 
             if (lastLoco == null || _railDriver == null) return;
 
-            var state = _railDriver.GetState();
             var locoControl = lastLoco.GetComponent<LocoControllerBase>();
-            
+            ILocoWrapper locoWrapper = null;
+
+            if (locoControl is LocoControllerShunter shunter)
+            {
+                locoWrapper = new ShunterLocoWrapper(shunter);
+            }
+
+            if (locoWrapper == null)
+            {
+                return;
+            }
+
+            var state = _railDriver.GetState();
+
+            if (state.IsChanged())
+            {
+                Debug.Log(state.ToString());
+            }
+
             if (state.Bell.IsChanged())
             {
                 locoControl.UpdateHorn(state.Bell.IsButtonDown() ? 1.0F : 0.0F);
             }
+
+            if (state.Power.IsChanged())
+            {
+                if (state.Power.IsButtonDown())
+                {
+                    locoWrapper.SetRunning(true);
+                }
+            }
+            
             
         }
     }

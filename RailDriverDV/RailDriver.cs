@@ -11,12 +11,13 @@ namespace RailDriverDV
     {
         private readonly PIEDevice _device;
         private readonly RailDriverState _state;
+
         private RailDriver(PIEDevice device)
         {
             _device = device;
             _state = new RailDriverState();
         }
-        
+
         [CanBeNull]
         public static RailDriver Setup()
         {
@@ -27,7 +28,7 @@ namespace RailDriverDV
             {
                 return null;
             }
-            
+
             Debug.Log("Setup: " + pieDevice.SetupInterface());
             pieDevice.suppressDuplicateReports = true;
             pieDevice.callNever = true;
@@ -52,7 +53,7 @@ namespace RailDriverDV
             _state.UpdateFrom(data);
             return _state;
         }
-        
+
         public static string FormatBytes(IEnumerable<byte> bytes)
         {
             return string.Join(" ", bytes.Select(each => each.ToString("X2")));
@@ -62,17 +63,27 @@ namespace RailDriverDV
     public class RailDriverState
     {
         public readonly ButtonState Bell = new ButtonState(13, 0x02);
+        public readonly ButtonState Power = new ButtonState(8, 0x01);
+
         private byte[] _lastData;
-        
+
         public void UpdateFrom(byte[] data)
         {
             Bell.UpdateFrom(data);
+            Power.UpdateFrom(data);
             _lastData = data;
         }
-        
+
         public override string ToString()
         {
-            return "Bell: " + Bell + "\n lastData: " + RailDriver.FormatBytes(_lastData);
+            return "Bell: " + Bell +
+                   "\n Power: " + Power +
+                   "\n lastData: " + RailDriver.FormatBytes(_lastData);
+        }
+
+        public bool IsChanged()
+        {
+            return Bell.IsChanged() || Power.IsChanged();
         }
     }
 
@@ -83,6 +94,7 @@ namespace RailDriverDV
 
         private bool _current;
         private bool _prev;
+
         public ButtonState(int index, byte mask)
         {
             _index = index;
