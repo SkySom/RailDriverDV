@@ -9,10 +9,14 @@ namespace RailDriverDV
     public static class Main
     {
         [CanBeNull] private static RailDriver _railDriver;
+        
+        public static Settings Settings = new Settings();
 
         [UsedImplicitly]
         public static bool Load(UnityModManager.ModEntry entry)
         {
+            Settings = UnityModManager.ModSettings.Load<Settings>(entry);
+            
             entry.OnToggle = OnToggle;
             entry.OnFixedUpdate = OnUpdate;
             return true;
@@ -41,6 +45,16 @@ namespace RailDriverDV
             }
 
             return true;
+        }
+        
+        private static void OnGUI(UnityModManager.ModEntry modEntry)
+        {
+            Settings.Draw();
+        }
+
+        private static void OnSaveGUI(UnityModManager.ModEntry modEntry)
+        {
+            Settings.Save(modEntry);
         }
 
         private static void OnUpdate(UnityModManager.ModEntry entry, float delta)
