@@ -2,7 +2,7 @@
     "Id": "RailDriverDV",
     "DisplayName": "RailDriver for Derail Valley",
     "Author": "SkySom",
-    "Version": "1.0.0",
+    "Version": "1.0.1",
     "AssemblyName": "RailDriverDV.dll",
     "EntryMethod": "RailDriverDV.Main.Load"
   }

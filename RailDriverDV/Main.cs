@@ -1,5 +1,4 @@
-﻿using CommandTerminal;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 using UnityEngine;
 using UnityModManagerNet;
 
@@ -9,16 +8,18 @@ namespace RailDriverDV
     public static class Main
     {
         [CanBeNull] private static RailDriver _railDriver;
-        
-        public static Settings Settings = new Settings();
+
+        private static Settings _settings = new Settings();
 
         [UsedImplicitly]
         public static bool Load(UnityModManager.ModEntry entry)
         {
-            Settings = UnityModManager.ModSettings.Load<Settings>(entry);
-            
+            _settings = UnityModManager.ModSettings.Load<Settings>(entry);
+
             entry.OnToggle = OnToggle;
             entry.OnFixedUpdate = OnUpdate;
+            entry.OnGUI = OnGUI;
+            entry.OnSaveGUI = OnSaveGUI;
             return true;
         }
 
@@ -27,7 +28,7 @@ namespace RailDriverDV
             if (active)
             {
                 _railDriver?.Dispose();
-                var newRailDriver = RailDriver.Setup();
+                var newRailDriver = RailDriver.Setup(_settings);
                 if (newRailDriver == null)
                 {
                     entry.Logger.Error("Failed to Setup RailDriver");
@@ -46,15 +47,15 @@ namespace RailDriverDV
 
             return true;
         }
-        
+
         private static void OnGUI(UnityModManager.ModEntry modEntry)
         {
-            Settings.Draw();
+            _settings.Draw(_railDriver?.GetState());
         }
 
         private static void OnSaveGUI(UnityModManager.ModEntry modEntry)
         {
-            Settings.Save(modEntry);
+            _settings.Save(modEntry);
         }
 
         private static void OnUpdate(UnityModManager.ModEntry entry, float delta)
@@ -64,17 +65,6 @@ namespace RailDriverDV
             if (lastLoco == null || _railDriver == null) return;
 
             var locoControl = lastLoco.GetComponent<LocoControllerBase>();
-            ILocoWrapper locoWrapper = null;
-
-            if (locoControl is LocoControllerShunter shunter)
-            {
-                locoWrapper = new ShunterLocoWrapper(shunter);
-            }
-
-            if (locoWrapper == null)
-            {
-                return;
-            }
 
             var state = _railDriver.GetState();
 
@@ -88,9 +78,40 @@ namespace RailDriverDV
                 locoControl.UpdateSand(locoControl.IsSandOn() ? ToggleDirection.DOWN : ToggleDirection.UP);
             }
 
-            if (state.Bell.IsChanged())
+            if (state.Horn.IsChanged())
             {
-                locoControl.UpdateHorn(state.Bell.IsButtonDown() ? 1.0F : 0.0F);
+                locoControl.UpdateHorn(state.Horn.Location());
+            }
+
+            if (state.Reverser.IsChanged())
+            {
+                if (state.Reverser.InMiddle())
+                {
+                    locoControl.SetReverser(0F);
+                }
+                else if (state.Reverser.Location() < state.Reverser.GetCalibration().Middle)
+                {
+                    locoControl.SetReverser(1F);
+                }
+                else
+                {
+                    locoControl.SetReverser(-1F);
+                }
+            }
+
+            if (state.Throttle.IsChanged())
+            {
+                locoControl.SetThrottle(state.Throttle.GetDifference());
+            }
+
+            if (state.TrainBrake.IsChanged())
+            {
+                locoControl.SetBrake(1F - state.TrainBrake.GetDifference());
+            }
+
+            if (state.IndependentBrake.IsChanged())
+            {
+                locoControl.SetIndependentBrake(1F - state.IndependentBrake.GetDifference());
             }
         }
     }
